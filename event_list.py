@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 import json
+
 import psycopg2
 
 url = "https://www.chf.or.kr/cont/{}/all/month/menu/363?thisPage=1&idx={}&searchCategory1=&searchCategory2={}&searchField=all&searchDate={}&weekSel=&searchText="
@@ -27,7 +28,7 @@ soup = BeautifulSoup(html.content, "html.parser")
 thumbnail_items = soup.find_all("div", class_="thumb_cont")
 
 # Create a list to store the extracted information
-data = []
+event_info = []
 
 
 for item in thumbnail_items:
@@ -45,38 +46,64 @@ for item in thumbnail_items:
     }
 
     # Add the item data to the list
-    data.append(item_data)
+    event_info.append(item_data)
 
-print(data)
+print(event_info)
 
-# Save the data as JSON
-with open("data.json", "w") as file:
-    json.dump(data, file, indent=4)
+# Save data as JSON
+with open("data.json", "w", encoding="utf-8") as json_file:
+    json.dump(event_info, json_file, ensure_ascii=False, indent=4)
 
 print("Data saved as JSON.")
 
+
+### JSON TO DB
+import psycopg2
+import json
+
+# ...
 
 # Connect to the PostgreSQL database
 conn = psycopg2.connect(
     host="localhost",
     database="db_gwolnadri",
-    user="admine",
+    user="admin",
     password="admin",
 )
 
 # Create a cursor to execute SQL statements
 cursor = conn.cursor()
 
-# Read the JSON data from file
-with open("data2.json", "r", encoding="utf-8") as json_file:
-    data = json.load(json_file)
+# Create the table if it doesn't exist
+create_table_query = """
+    CREATE TABLE IF NOT EXISTS event_data (
+        event_title VARCHAR,
+        event_num VARCHAR,
+        event_img VARCHAR,
+        event_date VARCHAR
+    )
+"""
+cursor.execute(create_table_query)
 
-# Iterate over the data and insert into the PostgreSQL database
-for key, value in data.items():
-    sql = "INSERT INTO your_table (column1, column2, column3, ...) VALUES (%s, %s, %s, ...)"
-    cursor.execute(sql, (key, value))
-    # ...
+# Commit the changes to the database
+conn.commit()
+
+# ...
+
+# Insert each item's data into the PostgreSQL database
+for item_data in event_info:
+    sql = "INSERT INTO event_data (event_title, event_num, event_img, event_date) VALUES (%s, %s, %s, %s)"
+    cursor.execute(sql, (
+        item_data["event_title"],
+        item_data["event_num"],
+        item_data["event_img"],
+        item_data["event_date"],
+    ))
+
+# ...
 
 # Commit the changes and close the connection
 conn.commit()
 conn.close()
+
+print("Data saved to PostgreSQL database.")

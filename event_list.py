@@ -51,17 +51,14 @@ for item in thumbnail_items:
 print(event_info)
 
 # Save data as JSON
-with open("data.json", "w", encoding="utf-8") as json_file:
+with open("event_list.json", "w", encoding="utf-8") as json_file:
     json.dump(event_info, json_file, ensure_ascii=False, indent=4)
 
 print("Data saved as JSON.")
 
 
 ### JSON TO DB
-import psycopg2
-import json
 
-# ...
 
 # Connect to the PostgreSQL database
 conn = psycopg2.connect(
